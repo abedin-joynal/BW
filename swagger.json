@@ -1,0 +1,42 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Bariwala API",
+      "version": "1.0.0",
+      "description": "Rent Management System API Documentation"
+    },
+    "servers": [
+      {
+        "url": "http://localhost:3000/api",
+        "description": "Local development server"
+      }
+    ],
+    "tags": [
+      {
+        "name": "Auth",
+        "description": "Authentication endpoints"
+      },
+      {
+        "name": "Homes",
+        "description": "Home management"
+      },
+      {
+        "name": "Tenants",
+        "description": "Tenant operations"
+      },
+      {
+        "name": "Payments",
+        "description": "Payment processing"
+      }
+    ],
+    "components": {
+      "securitySchemes": {
+        "bearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "JWT"
+        }
+      }
+    },
+    "paths": {}
+  }

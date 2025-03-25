@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum FloorType {
+  RESIDENTIAL
+  PARKING
+  MARKET
+}
+
+enum Role {
+  ADMIN
+  HOME_OWNER
+  TENANT
+}
+
+enum PaymentMethod {
+  CASH
+  BKASH
+  NAGAD
+  CARD
+  BANK_TRANSFER
+}
+
+model User {
+  id           String        @id @default(uuid())
+  phone        String        @unique
+  email        String?
+  password     String
+  fullName     String
+  nidNumber    String?
+  address      String?
+  role         Role
+  balance      Float         @default(0)
+  isVerified   Boolean       @default(false)
+  homes        Home[] // One-to-many with Home (owned homes)
+  tenants      Tenant[] // One-to-many with Tenant (user as tenant)
+  payments     Payment[] // Payments made or received by the user
+  bankAccounts BankAccount[] // Bank accounts linked to the user
+  logs         Log[] // Logs related to the user
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Home {
+  id        String    @id @default(uuid())
+  name      String
+  address   String
+  ownerId   String
+  owner     User      @relation(fields: [ownerId], references: [id])
+  towers    Tower[] // One-to-many with Tower
+  tenants   Tenant[] // Tenants living in this home
+  payments  Payment[] // Payments related to this home
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Tower {
+  id        String   @id @default(uuid())
+  name      String
+  homeId    String
+  home      Home     @relation(fields: [homeId], references: [id])
+  floors    Floor[] // One-to-many with Floor
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Floor {
+  id        String    @id @default(uuid())
+  number    Int
+  type      FloorType
+  towerId   String
+  tower     Tower     @relation(fields: [towerId], references: [id])
+  units     Unit[] // One-to-many with Unit
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Unit {
+  id            String    @id @default(uuid())
+  number        String
+  floorId       String
+  floor         Floor     @relation(fields: [floorId], references: [id])
+  type          FloorType
+  monthlyRent   Float
+  advanceMonths Int
+  isOccupied    Boolean   @default(false)
+  tenantId      String?   @unique // Ensures one-to-one with Tenant
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id])
+  payments      Payment[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Tenant {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+  homeId       String
+  home         Home      @relation(fields: [homeId], references: [id])
+  units        Unit[] // One-to-many with Unit
+  startDate    DateTime
+  endDate      DateTime?
+  agreement    String?
+  noticePeriod Int       @default(30)
+  isActive     Boolean   @default(true)
+  payments     Payment[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  amount    Float
+  method    PaymentMethod
+  reference String?
+  tenantId  String
+  tenant    Tenant        @relation(fields: [tenantId], references: [id])
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  homeId    String
+  home      Home          @relation(fields: [homeId], references: [id])
+  unitId    String
+  unit      Unit          @relation(fields: [unitId], references: [id])
+  month     Int
+  year      Int
+  isAdvance Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model BankAccount {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  bankName      String
+  accountName   String
+  accountNumber String
+  branchName    String?
+  isVerified    Boolean  @default(false)
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Log {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+}
+
+model Permission {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  description     String?
+  rolePermissions RolePermission[] // One-to-many with RolePermission
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  role         Role
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
